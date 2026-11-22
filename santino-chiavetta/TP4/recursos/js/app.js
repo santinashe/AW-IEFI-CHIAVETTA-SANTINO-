@@ -1,3 +1,6 @@
+import { obtenerProductos } from "./datos.js";
+import { validarFormulario, mostrarMensaje } from "./validaciones.js";
+
 
 const formatoPrecio = (precio) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(precio);
 // Una lectura dañada nunca debe impedir que se abra el sitio.
@@ -227,27 +230,45 @@ function iniciarFormularios() {
 
 document.addEventListener("DOMContentLoaded", () => { actualizarContadorCarrito(); iniciarCatalogo(); iniciarCarrito(); iniciarResumenCompra(); iniciarAgregarProducto(); iniciarFormularios(); iniciarConfirmacion(); });
 
+// El pedido se prepara con los productos del carrito y se envía desde WhatsApp.
 function iniciarConfirmacion() {
     const boton = document.querySelector('#confirmar-pedido');
     boton?.addEventListener('click', async () => {
         boton.disabled = true;
+        const estado = document.querySelector('#estado-pedido');
         try {
             const productos = await obtenerProductos();
             const carrito = await carritoValido();
-            if (!carrito.length) { await iniciarResumenCompra(); return; }
-            const subtotal = carrito.reduce((total, item) => total + productos.find((p) => p.id === item.id).precio * item.cantidad, 0);
-            const pedido = { numero: `CD-${Date.now()}`, fecha: new Date().toISOString(), articulos: carrito, ...calcularTotales(subtotal, promocion) };
-            // Primero guardamos el comprobante local; no hay cobros ni envío a servidores.
-            guardarJSON('chiavetta-pedido', pedido, sessionStorage);
-            try { guardarCarrito([]); } catch (error) { sessionStorage.removeItem('chiavetta-pedido'); throw error; }
-            location.href = 'confirmacion.html';
-        } catch (error) { informarError(error); boton.disabled = false; }
+            if (!carrito.length) {
+                await iniciarResumenCompra();
+                return;
+            }
+
+            let subtotal = 0;
+            let mensaje = 'Hola, quiero realizar el siguiente pedido en Chiavetta Detailing:\n\n';
+            carrito.forEach((item) => {
+                const producto = productos.find((p) => p.id === item.id);
+                if (!producto) return;
+                const importe = producto.precio * item.cantidad;
+                subtotal += importe;
+                mensaje += `${producto.nombre} x ${item.cantidad} - ${formatoPrecio(importe)}\n`;
+            });
+
+            const totales = calcularTotales(subtotal, promocion);
+            mensaje += `\nSubtotal: ${formatoPrecio(totales.subtotal)}`;
+            if (totales.descuento) mensaje += `\nDescuento: ${formatoPrecio(totales.descuento)}`;
+            mensaje += `\nImpuesto de ejemplo: ${formatoPrecio(totales.impuesto)}`;
+            mensaje += `\nTotal: ${formatoPrecio(totales.total)}`;
+            mensaje += '\n\nQuiero consultar cómo continuar con el pedido.';
+
+            // WhatsApp muestra el mensaje preparado; el usuario debe presionar Enviar.
+            const enlace = 'https://wa.me/5493513090597?text=' + encodeURIComponent(mensaje);
+            estado.textContent = 'Tu pedido está preparado. Se abrirá WhatsApp para que puedas enviarlo. El carrito no se borrará automáticamente.';
+            window.location.href = enlace;
+        } catch (error) {
+            informarError(error);
+        } finally {
+            boton.disabled = false;
+        }
     });
-    const contenedor = document.querySelector('#confirmacion-pedido');
-    if (!contenedor) return;
-    const pedido = leerJSON('chiavetta-pedido', null, sessionStorage);
-    if (!pedido || typeof pedido.numero !== 'string' || !Number.isFinite(pedido.total) || !Array.isArray(pedido.articulos) || !pedido.articulos.length) return;
-    const texto = document.createElement('p');
-    texto.textContent = `Pedido de prueba ${pedido.numero}. Total: ${formatoPrecio(pedido.total)}. Guardado en esta sesión. No se realizó ningún pago ni se envió el pedido al negocio.`;
-    contenedor.replaceChildren(texto);
 }

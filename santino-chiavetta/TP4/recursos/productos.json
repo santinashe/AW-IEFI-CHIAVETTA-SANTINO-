@@ -25,7 +25,7 @@
     "descripcion": "Acondicionador de cueros y protector UV para tapizados y plásticos internos.",
     "precio": 21000,
     "imagen": "recursos/img/mantenimiento-kit.jpg",
-    "detalle": "producto-detalle.html?id=mantenimiento-kit"
+    "detalle": "producto-detalle.html?id=kit-interior"
   },
   {
     "id": "detail-spray",

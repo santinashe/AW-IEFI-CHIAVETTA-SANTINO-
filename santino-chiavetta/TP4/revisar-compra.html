@@ -59,7 +59,7 @@
         <main id="main" class="main" tabindex="-1">
             
             <h1>Revisar tu pedido</h1>
-            <p>Revisá los productos seleccionados. Esta es una simulación local: no realiza pagos ni envía pedidos.</p>
+            <p>Revisá los productos seleccionados. Al continuar se abrirá WhatsApp con el pedido preparado. Tendrás que presionar Enviar para mandarlo al negocio. No se realizan pagos desde esta web.</p>
             <section class="seccion">
                 <h2>Artículos seleccionados</h2>
                 <div id="resumen-compra" aria-live="polite">Cargando resumen del pedido...</div>
@@ -73,7 +73,8 @@
                     <button type="submit">Aplicar</button>
                 </form>
                 <p>
-                    <button id="confirmar-pedido" class="boton" type="button" disabled>Confirmar pedido de prueba</button><p id="estado-pedido" role="status"></p>
+                    <button id="confirmar-pedido" class="boton" type="button" disabled>Enviar pedido por WhatsApp</button>
+                    <span id="estado-pedido" role="status"></span>
                 </p>
             </section>
         </main>
@@ -121,8 +122,6 @@
             <span>Carrito</span>
         </a>
         <noscript><p class="main__aviso">Activá JavaScript para buscar productos, agregarlos al carrito y usar los formularios.</p></noscript>
-        <script src="recursos/js/datos.js"></script>
-        <script src="recursos/js/validaciones.js"></script>
-        <script src="recursos/js/app.js"></script>
-    </body>
+        <script type="module" src="recursos/js/app.js"></script>
+</body>
 </html>
