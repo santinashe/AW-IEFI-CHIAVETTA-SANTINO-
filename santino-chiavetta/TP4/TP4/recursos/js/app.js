@@ -1,5 +1,6 @@
 import { obtenerProductos } from "./datos.js";
 import { validarFormulario, mostrarMensaje } from "./validaciones.js";
+import { calcularTotales, cantidadValida } from "./calculos.js";
 
 
 const formatoPrecio = (precio) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(precio);
@@ -24,12 +25,6 @@ function leerCarrito() {
     return articulos;
 }
 const guardarCarrito = (carrito) => guardarJSON('chiavetta-carrito', carrito);
-function calcularTotales(subtotal, promocion = false) {
-    const descuento = promocion ? Math.round(subtotal * 0.1) : 0;
-    // Tasa heredada del TP, solo para la simulación; no representa impuestos reales.
-    const impuesto = Math.round((subtotal - descuento) * 0.085);
-    return { subtotal, descuento, impuesto, total: subtotal - descuento + impuesto };
-}
 
 let promocion = false;
 function textoTotales(subtotal) {
@@ -131,7 +126,7 @@ function iniciarCarrito() {
             const precio = document.createElement("p"); precio.textContent = `Precio unitario: ${formatoPrecio(producto.precio)}`;
             const etiqueta = document.createElement("label"); etiqueta.textContent = "Cantidad "; etiqueta.htmlFor = `cantidad-${producto.id}`;
             const cantidad = document.createElement("input"); cantidad.type = "number"; cantidad.min = "1"; cantidad.max = "99"; cantidad.value = item.cantidad; cantidad.id = etiqueta.htmlFor; cantidad.setAttribute("aria-label", `Cantidad de ${producto.nombre}`);
-            cantidad.addEventListener("change", () => { const nueva = Number(cantidad.value); if (!Number.isInteger(nueva) || nueva < 1 || nueva > 99) { cantidad.value = item.cantidad; return; } item.cantidad = nueva; if (!guardarSeguro(carrito)) return; renderizarCarrito(); actualizarContadorCarrito(); });
+            cantidad.addEventListener("change", () => { const nueva = Number(cantidad.value); if (!cantidadValida(nueva)) { cantidad.value = item.cantidad; return; } item.cantidad = nueva; if (!guardarSeguro(carrito)) return; renderizarCarrito(); actualizarContadorCarrito(); });
             const importeTexto = document.createElement("p"); importeTexto.textContent = `Subtotal: ${formatoPrecio(importe)}`;
             const quitar = document.createElement("button"); quitar.type = "button"; quitar.textContent = "Quitar"; quitar.addEventListener("click", () => { if (!guardarSeguro(carrito.filter((otro) => otro.id !== item.id))) return; renderizarCarrito(); actualizarContadorCarrito(); });
             articulo.append(titulo, precio, etiqueta, cantidad, importeTexto, quitar); contenedor.appendChild(articulo);
@@ -189,7 +184,7 @@ async function iniciarAgregarProducto() {
         formulario.addEventListener('submit', (evento) => {
             evento.preventDefault();
             const cantidad = Number(campo.value);
-            if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 99) {
+            if (!cantidadValida(cantidad)) {
                 campo.setCustomValidity('Ingresá una cantidad entera entre 1 y 99.'); campo.reportValidity(); return;
             }
             const carrito = leerCarrito().filter((item) => productos.some((p) => p.id === item.id));
